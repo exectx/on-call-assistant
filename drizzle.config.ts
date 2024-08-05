@@ -9,5 +9,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: [`t3-cloudflare_*`],
+  tablesFilter: [`hack_*`],
 } satisfies Config;
