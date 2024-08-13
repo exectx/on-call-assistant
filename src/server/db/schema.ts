@@ -27,3 +27,25 @@ export const posts = createTable(
     nameIndex: index("name_idx").on(example.name),
   }),
 );
+
+export const conversations = createTable(
+  "conversation",
+  {
+    id: text("id", { length: 256 }).primaryKey(),
+    userId: text("user_id", { length: 256 }).notNull(),
+    title: text("title", { length: 256 })
+      .default("Untitled conversation")
+      .notNull(),
+    summary: text("summary", { length: 256 }).default("No summary").notNull(),
+    createdAt: int("created_at", { mode: "timestamp" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: int("updated_at", { mode: "timestamp" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (convo) => ({
+    userIdIndex: index("user_id_idx").on(convo.userId),
+    updatedAtIndex: index("updated_at_idx").on(convo.updatedAt),
+  }),
+);

@@ -35,10 +35,22 @@ export function LatestPost() {
         <Input
           type="text"
           placeholder="Title"
+          className=""
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={createPost.isPending}>
+        <Button
+          variant={"secondary"}
+          type="submit"
+          disabled={createPost.isPending}
+        >
+          {createPost.isPending ? "Submitting..." : "Submit"}
+        </Button>
+        <Button
+          className="border border-primary/75"
+          type="submit"
+          disabled={createPost.isPending}
+        >
           {createPost.isPending ? "Submitting..." : "Submit"}
         </Button>
       </form>
