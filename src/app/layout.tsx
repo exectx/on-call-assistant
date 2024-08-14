@@ -57,7 +57,9 @@ export default function RootLayout({
                 <div className="flex h-12 items-center border-b border-input bg-zinc-50 px-6">
                   Conversations
                 </div>
-                <main className="flex w-full flex-1 px-6 pt-6">{children}</main>
+                <main className="max-h-screen w-full flex-1 overflow-y-auto">
+                  {children}
+                </main>
               </div>
             </div>
             <Toaster />

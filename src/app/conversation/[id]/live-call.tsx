@@ -1,13 +1,14 @@
 "use client";
 import Show from "@/components/show";
+import Groq from "groq-sdk";
 import { Button } from "@/components/ui/button";
-import { api, RouterOutputs } from "@/trpc/react";
-import { useMicVAD } from "@ricky0123/vad-react";
+import { api, type RouterOutputs } from "@/trpc/react";
+import { useMicVAD, utils } from "@ricky0123/vad-react";
 import { useEffect, useRef, useState } from "react";
 import { useCallStore } from "./live-call-store";
 import { MicIcon, MicOffIcon, SettingsIcon } from "lucide-react";
-import { shallow } from "zustand/shallow";
 import { useShallow } from "zustand/react/shallow";
+// import { getOptionalRequestContext } from "@cloudflare/next-on-pages";
 
 import {
   Dialog,
@@ -26,13 +27,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { atom, useAtom } from "jotai";
+// import { env } from "@/env";
 
 function LiveCallSettings() {
   const devices_query = useInputDevicesQuery();
@@ -44,6 +45,7 @@ function LiveCallSettings() {
       enabledSecondarySrc: state.enabledSecondarySrc,
       setEnabledSecondarySrc: state.setEnabledSecondarySrc,
       setSecondarySrc: state.setSecondarySrc,
+      secondarySrcState: state.secondaryState,
       optional_SecondarySrcMicId: state.secondarySrcMicId,
     })),
   );
@@ -186,12 +188,17 @@ function LiveCallSettings() {
                 </div>
                 <Button
                   size={"sm"}
-                  disabled={secondaryMicEnabled}
+                  disabled={
+                    secondaryMicEnabled ||
+                    state.secondarySrcState === "screen-stream"
+                  }
                   onClick={() => {
                     state.setSecondarySrc("screen");
                   }}
                 >
-                  Share tab
+                  {state.secondarySrcState === "screen-stream"
+                    ? "Sharing"
+                    : "Share tab"}
                 </Button>
               </div>
             </div>
@@ -300,8 +307,55 @@ function VapiFetcher() {
   return null;
 }
 
+type Transcription = Array<string>;
+const transcriptionAtom = atom<Transcription>([]);
+
+// const x = getOptionalRequestContext();
+
+console.log("GROQ:", process.env.NEXT_PUBLIC_GROQ_API_KEY);
+const groq = new Groq({
+  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
+  dangerouslyAllowBrowser: true,
+});
+
+function useTranscriptions() {
+  const [transcription, setTranscriptionAt, increase] = useCallStore(
+    useShallow(
+      (state) =>
+        [
+          state.transcriptions,
+          state.setTranscriptionAt,
+          state.incrementTranscriptionSpace,
+        ] as const,
+    ),
+  );
+  const transcription_mut = useMutation({
+    mutationFn: async (file: File) => {
+      const idx = transcription.length;
+      console.time(`groq-whisper-${idx}`);
+      increase();
+      const result = await groq.audio.transcriptions.create({
+        file,
+        model: "whisper-large-v3",
+      });
+      if (result.text) {
+        setTranscriptionAt(idx, result.text);
+      }
+      console.timeEnd(`groq-whisper-${idx}`);
+      return result;
+    },
+  });
+  return {
+    transcription,
+    transcribe: transcription_mut.mutate,
+    isPending: transcription_mut.isPending,
+    status: transcription_mut.status,
+  };
+}
+
 function VadWithStream(props: { stream: MediaStream }) {
   const vadClock = useRef(0);
+  const { transcription, transcribe, status } = useTranscriptions();
   const vad = useMicVAD({
     startOnLoad: true,
     stream: props.stream,
@@ -325,13 +379,29 @@ function VadWithStream(props: { stream: MediaStream }) {
       console.log("speech start", new Date().toISOString());
       vadClock.current = Date.now();
     },
-    onSpeechEnd: (_audio) => {
+    onSpeechEnd: (audio) => {
       console.log("speech end", Date.now() - vadClock.current);
+      const wav = utils.encodeWAV(audio);
+      const blob = new Blob([wav], { type: "audio/wav" });
+      const file = new File([blob], "audio.wav", {
+        type: "audio/wav",
+      });
+      transcribe(file);
     },
   });
   return (
     <>
       <div>Vad status: {vad.userSpeaking ? "speaking" : "silence"}</div>
+      <div>
+        {status === "pending"
+          ? "Transcribing..."
+          : status === "success"
+            ? "Transcribed"
+            : status}
+      </div>
+      <div className="whitespace-pre-line">
+        Current: {transcription.join(" ")}
+      </div>
       <Button onClick={vad.toggle}>
         {vad.listening ? "Stop" : "Start"} listening
       </Button>
@@ -350,7 +420,7 @@ function VadDebug() {
     );
 
   return (
-    <div>
+    <div className="w-[500px]">
       <VadWithStream stream={stream} />
     </div>
   );
@@ -367,10 +437,12 @@ export function LiveCallPage(props: {
 
   if (!conv) return console.error("conv not found"), null;
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="contents">
       <VapiFetcher />
-      <LiveNavTools />
-      <div className="flex h-full items-center justify-center">
+      <div className="p-6">
+        <LiveNavTools />
+      </div>
+      <div className="flex h-full items-center justify-center p-6">
         <VadDebug />
       </div>
     </div>

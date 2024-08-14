@@ -16,6 +16,9 @@ export type CallState = {
   vapi: Vapi | undefined;
   call: Call | undefined;
   stream: MediaStream | undefined;
+  transcriptions: Array<string>;
+  incrementTranscriptionSpace: () => void;
+  setTranscriptionAt: (idx: number, text: string) => void;
   init: () => Promise<void>;
   start: () => Promise<void>;
   stop: () => void;
@@ -35,11 +38,31 @@ export type CallState = {
 };
 
 export const useCallStore = create<CallState>((set, get) => {
-  let secondaryStream: MediaStream | undefined;
+  // let secondaryStream: MediaStream | undefined;
   return {
     vapi: undefined,
     call: undefined,
     stream: undefined,
+    transcriptions: [],
+    incrementTranscriptionSpace: () => {
+      set((state) => {
+        const transcriptions = [...state.transcriptions, ""];
+        return { transcriptions };
+      });
+    },
+    setTranscriptionAt: (idx, text) => {
+      set((state) => {
+        const transcriptions = [...state.transcriptions];
+        if (typeof transcriptions[idx] === "undefined") {
+          console.log(
+            "fatal error, trying to set transcription at invalid idx, ignoring",
+          );
+          return { transcriptions: state.transcriptions };
+        }
+        transcriptions[idx] = text;
+        return { transcriptions };
+      });
+    },
     init: async () => {
       const defaultDeviceId = localStorage.getItem("mic-src");
       if (!defaultDeviceId) {
@@ -102,7 +125,7 @@ export const useCallStore = create<CallState>((set, get) => {
             },
           })
           .then((stream) => {
-            secondaryStream = stream;
+            // secondaryStream = stream;
             set(() => ({ secondaryState: "screen-stream", stream }));
           })
           .catch((err) => {
@@ -127,7 +150,7 @@ export const useCallStore = create<CallState>((set, get) => {
             },
           })
           .then((stream) => {
-            secondaryStream = stream;
+            // secondaryStream = stream;
             set(() => ({
               secondaryState: "mic-stream",
               stream,
@@ -159,7 +182,7 @@ export const useCallStore = create<CallState>((set, get) => {
       }));
     },
     logMediaStream: () => {
-      console.log(secondaryStream);
+      console.log(get().stream);
     },
     // captureSecondarySource: () => {}
   };
