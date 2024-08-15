@@ -74,13 +74,32 @@ export const useCallStore = create<CallState>((set, get) => {
       const vapi = await vapiLoader.get();
       set(() => ({ vapi }));
     },
-    start: async () => {
+    start: async (opts: { forceCall: boolean } = { forceCall: false }) => {
       const vapi = get().vapi;
       if (!vapi) {
         console.log("VAPI not loaded");
         return;
       }
+      const _call = get().call;
+      if (_call) {
+        console.log("Call already started");
+      }
+      if (_call && !opts.forceCall) {
+        console.log("Call already started, ignoring");
+        return;
+      }
+      if (_call && opts.forceCall) {
+        vapi.stop();
+      }
+      const primarySrcDeviceId = get().primarySrcDeviceId;
+      console.log("starting call with primarySrcDeviceId", primarySrcDeviceId);
+      if (primarySrcDeviceId) {
+        vapi.setInputDevicesAsync({ audioDeviceId: primarySrcDeviceId });
+      }
       const call = (await vapi.start(VAPI_ASSISTANT_ID)) ?? undefined;
+      if (call && primarySrcDeviceId) {
+        vapi.setInputDevicesAsync({ audioDeviceId: primarySrcDeviceId });
+      }
       set(() => ({ call }));
     },
     stop: () => {
@@ -90,12 +109,19 @@ export const useCallStore = create<CallState>((set, get) => {
         return;
       }
       vapi.stop();
+      set(() => ({ call: undefined }));
     },
     enabledSecondarySrc: "screen",
     secondaryState: "no-stream",
     secondarySrcMicId: undefined,
     mutedPrimary: false,
     toggleMutePrimary: () => {
+      const muted = get().mutedPrimary;
+      if (muted) {
+        get().vapi?.setMuted(false);
+      } else {
+        get().vapi?.setMuted(true);
+      }
       set((state) => ({ mutedPrimary: !state.mutedPrimary }));
     },
     mutedSecondary: false,

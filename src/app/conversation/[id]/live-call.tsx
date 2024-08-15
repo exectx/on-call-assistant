@@ -6,7 +6,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { useMicVAD, utils } from "@ricky0123/vad-react";
 import { useEffect, useRef, useState } from "react";
 import { useCallStore } from "./live-call-store";
-import { MicIcon, MicOffIcon, SettingsIcon } from "lucide-react";
+import { MicIcon, MicOffIcon, PhoneIcon, SettingsIcon } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 // import { getOptionalRequestContext } from "@cloudflare/next-on-pages";
 
@@ -285,6 +285,53 @@ function Debug() {
   );
 }
 
+function JoinORLeaveCall() {
+  const state = useCallStore(
+    useShallow((state) => ({
+      vapi: state.vapi,
+      call: state.call,
+      start: state.start,
+      stop: state.stop,
+      streamStatus: state.secondaryState,
+    })),
+  );
+  const startCall_mut = useMutation({
+    mutationFn: async () => state.start(),
+  });
+  return (
+    <div className="flex">
+      <Button
+        size={"sm"}
+        variant={state.call ? "destructive" : "default"}
+        disabled={startCall_mut.isPending || state.streamStatus === "no-stream"}
+        onClick={() => {
+          if (state.call) {
+            state.stop();
+          } else {
+            startCall_mut.mutate();
+          }
+        }}
+      >
+        <PhoneIcon
+          className={cn("mr-1 size-4 rotate-[135deg]", !state.call && "hidden")}
+        />
+        <PhoneIcon className={cn("mr-1 size-4", state.call && "hidden")} />
+        {state.call?.status ?? "undefined"}
+      </Button>
+      <Button
+        size={"sm"}
+        variant={"outline"}
+        onClick={() => {
+          console.log(state.call);
+          console.log("messages", state.call?.messages);
+        }}
+      >
+        log call
+      </Button>
+    </div>
+  );
+}
+
 function LiveNavTools() {
   return (
     <div className="flex min-h-14 w-full items-center justify-between rounded-md border border-input bg-zinc-50 px-4 py-3">
@@ -293,7 +340,7 @@ function LiveNavTools() {
         <LiveCallSettings />
         <Debug />
       </div>
-      <Button>Start</Button>
+      <JoinORLeaveCall />
     </div>
   );
 }
@@ -319,13 +366,14 @@ const groq = new Groq({
 });
 
 function useTranscriptions() {
-  const [transcription, setTranscriptionAt, increase] = useCallStore(
+  const [transcription, setTranscriptionAt, increase, vapi] = useCallStore(
     useShallow(
       (state) =>
         [
           state.transcriptions,
           state.setTranscriptionAt,
           state.incrementTranscriptionSpace,
+          state.vapi,
         ] as const,
     ),
   );
@@ -342,7 +390,50 @@ function useTranscriptions() {
         setTranscriptionAt(idx, result.text);
       }
       console.timeEnd(`groq-whisper-${idx}`);
-      return result;
+      return { idx, text: result.text };
+    },
+    onSuccess: ({ idx, text }) => {
+      const stateTranscriptions = useCallStore.getState().transcriptions;
+      console.log({
+        "getState().transcriptions": stateTranscriptions,
+        text,
+        transcription,
+      });
+      let msg = transcription.join(" ");
+      // const hasMarkers = transcription.find(text => text === '');
+      const hasMarkerOnSelectedIndex = transcription[idx] === "";
+      const hasMarkerOnOtherIndex = transcription.find(
+        (text, i) => i !== idx && text === "",
+      );
+
+      if (hasMarkerOnSelectedIndex && !hasMarkerOnOtherIndex) {
+        console.log(
+          "Selected index has marker, react hasn't updated yet, manually updating",
+        );
+        transcription[idx] = text;
+        msg = transcription.join(" ");
+        // msg = transcription.slice(0, idx).join(" ");
+      }
+      if (hasMarkerOnOtherIndex) {
+        console.log(
+          "Skipping transcription update, other marker found, waiting for next update",
+        );
+        return;
+      }
+      // if (hasMarkerOnOtherIndex) {}
+
+      if (vapi) {
+        console.log("Sending message", msg, transcription);
+      } else {
+        console.log("Vapi not found");
+      }
+      vapi?.send({
+        type: "add-message",
+        message: {
+          role: "system",
+          content: `Latest updated transcription: ${msg}`,
+        },
+      });
     },
   });
   return {

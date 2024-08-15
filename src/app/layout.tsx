@@ -1,13 +1,10 @@
 import "@/styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-
-import { nanoid } from "nanoid";
+import LocalFont from "next/font/local";
 import { TRPCReactProvider } from "@/trpc/react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { cookies, headers } from "next/headers";
 import { Provider } from "jotai";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
@@ -18,6 +15,22 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
+const fontSatoshi = LocalFont({
+  src: [
+    {
+      path: "../styles/Satoshi-Variable.ttf",
+      weight: "300 900",
+      style: "normal",
+    },
+    {
+      path: "../styles/Satoshi-VariableItalic.ttf",
+      weight: "300 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-satoshi-sans",
+});
+
 export const runtime = "edge";
 
 export default function RootLayout({
@@ -26,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} h-full`}>
+    <html lang="en" className={`${fontSatoshi.variable} h-full`}>
       <body
         className={cn("h-full bg-stone-100 text-blue-800 dark:bg-stone-900")}
       >
@@ -42,7 +55,7 @@ export default function RootLayout({
                 <div className="flex h-12 items-center justify-start border-b border-input px-5">
                   Home icon
                 </div>
-                <div className="flex flex-col gap-2 border-b border-[rgb(223,223,223)] px-5 py-6">
+                <div className="flex flex-col gap-2 border-b border-input px-5 py-6">
                   <div className="text-primary/75">Conversations</div>
                   <Link href={"/"}>All convos</Link>
                 </div>
@@ -50,6 +63,7 @@ export default function RootLayout({
                   <div className="text-primary/75">Settings</div>
                   <Link href="/settings/devices">Microphone</Link>
                   <Link href="/settings/api-keys">API Keys</Link>
+                  <Link href="/settings/profile">Profile</Link>
                 </div>
               </div>
               <div className="flex flex-1 flex-col">
