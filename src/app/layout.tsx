@@ -56,8 +56,8 @@ export default function RootLayout({
                   Home icon
                 </div>
                 <div className="flex flex-col gap-2 border-b border-input px-5 py-6">
-                  <div className="text-primary/75">Conversations</div>
-                  <Link href={"/"}>All convos</Link>
+                  <div className="text-primary/75">Spaces</div>
+                  <Link href={"/"}>All spaces</Link>
                 </div>
                 <div className="flex flex-col gap-2 border-b border-input px-5 py-6">
                   <div className="text-primary/75">Settings</div>
@@ -69,7 +69,7 @@ export default function RootLayout({
               <div className="flex flex-1 flex-col">
                 {/* #E0DFE0 */}
                 <div className="flex h-12 items-center border-b border-input bg-zinc-50 px-6">
-                  Conversations
+                  Spaces
                 </div>
                 <main className="max-h-screen w-full flex-1 overflow-y-auto">
                   {children}

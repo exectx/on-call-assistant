@@ -26,16 +26,8 @@ import { useCopyToClipboard } from "@/lib/hooks/use-copy-to-clipboard";
 import { api } from "@/trpc/react";
 
 function updateUserCookie(updatedId: string) {
-  // preserve other cookies
-  const cookies = document.cookie
-    .split(";")
-    .filter((cookie) => !cookie.includes("userId="))
-    .join("; ");
-  const updatedCookies = cookies
-    ? `${cookies}; userId=${updatedId}; path=/`
-    : `userId=${updatedId}; path=/`;
-  document.cookie = updatedCookies;
-  console.log("updatedCookie", updatedCookies);
+  document.cookie = `userId=${updatedId}; path=/;`;
+  console.log("updatedCookie", document.cookie);
 }
 
 const userIdAtom = atom<string>("<placeholder>");
@@ -58,6 +50,7 @@ export function ProfileSettingsPage(props: { userId: string }) {
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
+    mode: "onBlur",
     defaultValues: {
       userId,
     },
@@ -70,6 +63,12 @@ export function ProfileSettingsPage(props: { userId: string }) {
     updateUserCookie(data.userId);
     void t_ctx.invalidate();
   }
+
+  console.log("err", form.formState.errors);
+  console.log({
+    not_valid: !form.formState.isValid,
+    not_isDirty: !form.formState.isDirty,
+  });
 
   return (
     <div className="contents">

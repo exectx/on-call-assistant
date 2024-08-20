@@ -151,7 +151,12 @@ export const useCallStore = create<CallState>((set, get) => {
             },
           })
           .then((stream) => {
-            // secondaryStream = stream;
+            stream.getAudioTracks()[0]!.onended = () => {
+              set(() => ({ secondaryState: "no-stream" }));
+            };
+            stream.getVideoTracks()[0]!.onended = () => {
+              set(() => ({ secondaryState: "no-stream" }));
+            };
             set(() => ({ secondaryState: "screen-stream", stream }));
           })
           .catch((err) => {
@@ -177,6 +182,9 @@ export const useCallStore = create<CallState>((set, get) => {
           })
           .then((stream) => {
             // secondaryStream = stream;
+            stream.getAudioTracks()[0]!.onended = () => {
+              set(() => ({ secondaryState: "no-stream" }));
+            };
             set(() => ({
               secondaryState: "mic-stream",
               stream,

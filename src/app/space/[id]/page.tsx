@@ -2,7 +2,7 @@ import { api, HydrateClient } from "@/trpc/server";
 import { LiveCallPage } from "./live-call";
 import { redirect } from "next/navigation";
 
-export default async function Conv(props: {
+export default async function SpacePage(props: {
   params: {
     id: string;
   };

@@ -14,12 +14,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useInputDevicesQuery, usePrimaryMicStorage } from "./hooks";
 import { cn } from "@/lib/utils";
@@ -32,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { atom, useAtom } from "jotai";
+import { atom } from "jotai";
 // import { env } from "@/env";
 
 function LiveCallSettings() {
@@ -59,7 +57,7 @@ function LiveCallSettings() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size="sm">
           <SettingsIcon className="size-4" />
         </Button>
       </DialogTrigger>
@@ -243,6 +241,7 @@ function MicrophoneToggle() {
         variant={"outline"}
         className="transition-all"
         onClick={muteToggle}
+        size={"sm"}
       >
         <MicIcon className={cn("size-4", muted && "hidden")} />
         <MicOffIcon className={cn("size-4", !muted && "hidden")} />
@@ -354,11 +353,6 @@ function VapiFetcher() {
   return null;
 }
 
-type Transcription = Array<string>;
-const transcriptionAtom = atom<Transcription>([]);
-
-// const x = getOptionalRequestContext();
-
 console.log("GROQ:", process.env.NEXT_PUBLIC_GROQ_API_KEY);
 const groq = new Groq({
   apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
@@ -447,6 +441,7 @@ function useTranscriptions() {
 function VadWithStream(props: { stream: MediaStream }) {
   const vadClock = useRef(0);
   const { transcription, transcribe, status } = useTranscriptions();
+  const [audios, setAudios] = useState<Array<File>>([]);
   const vad = useMicVAD({
     startOnLoad: true,
     stream: props.stream,
@@ -477,6 +472,7 @@ function VadWithStream(props: { stream: MediaStream }) {
       const file = new File([blob], "audio.wav", {
         type: "audio/wav",
       });
+      setAudios([...audios, file]);
       transcribe(file);
     },
   });
@@ -496,6 +492,11 @@ function VadWithStream(props: { stream: MediaStream }) {
       <Button onClick={vad.toggle}>
         {vad.listening ? "Stop" : "Start"} listening
       </Button>
+      {audios.map((audio, index) => (
+        <div key={index}>
+          <audio src={URL.createObjectURL(audio)} controls />
+        </div>
+      ))}
     </>
   );
 }
@@ -528,7 +529,7 @@ export function LiveCallPage(props: {
 
   if (!conv) return console.error("conv not found"), null;
   return (
-    <div className="contents">
+    <div>
       <VapiFetcher />
       <div className="p-6">
         <LiveNavTools />
