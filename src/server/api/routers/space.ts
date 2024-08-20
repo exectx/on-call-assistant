@@ -1,15 +1,15 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { conversations } from "@/server/db/schema";
+import { spaces } from "@/server/db/schema";
 import { gen_id } from "@/lib/utils";
 import { eq } from "drizzle-orm";
 
-export const conversationRouter = createTRPCRouter({
+export const spaceRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
-    const userConvs = await ctx.db.query.conversations.findMany({
-      where: (_conv, { eq }) => eq(_conv.userId, ctx.user),
-      orderBy: (_conv, { desc }) => [desc(_conv.updatedAt)],
+    const userConvs = await ctx.db.query.spaces.findMany({
+      where: (_space, { eq }) => eq(_space.userId, ctx.user),
+      orderBy: (_space, { desc }) => [desc(_space.updatedAt)],
       limit: 10,
     });
     return userConvs;
@@ -17,16 +17,16 @@ export const conversationRouter = createTRPCRouter({
   getOne: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const conv = await ctx.db.query.conversations.findFirst({
-        where: (_conv, { eq, and }) =>
-          and(eq(_conv.userId, ctx.user), eq(_conv.id, input.id)),
+      const space = await ctx.db.query.spaces.findFirst({
+        where: (_space, { eq, and }) =>
+          and(eq(_space.userId, ctx.user), eq(_space.id, input.id)),
       });
-      return conv ?? null;
+      return space ?? null;
     }),
   create: protectedProcedure.mutation(async ({ ctx }) => {
     const id = gen_id();
     const [inserted] = await ctx.db
-      .insert(conversations)
+      .insert(spaces)
       .values({ id, userId: ctx.user })
       .returning();
     return inserted ?? null;
@@ -34,18 +34,18 @@ export const conversationRouter = createTRPCRouter({
   update: protectedProcedure
     .input(
       z.object({
-        conversationId: z.string(),
+        id: z.string(),
         title: z.string().min(1),
         summary: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db
-        .update(conversations)
+        .update(spaces)
         .set({
           title: input.title,
           summary: input.summary,
         })
-        .where(eq(conversations.id, input.conversationId));
+        .where(eq(spaces.id, input.id));
     }),
 });

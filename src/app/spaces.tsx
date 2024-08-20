@@ -14,13 +14,13 @@ function SpaceCard() {
 }
 
 export function Spaces() {
-  const [convs] = api.conversations.getAll.useSuspenseQuery();
+  const [spaces] = api.space.getAll.useSuspenseQuery();
 
   return (
-    <Show when={convs.length > 0} fallback={<div>No conversations yet</div>}>
-      <For each={convs}>
-        {(conv) => (
-          <Link href={`/space/${conv.id}`} key={conv.id}>
+    <Show when={spaces.length > 0} fallback={<div>No spaces yet</div>}>
+      <For each={spaces}>
+        {(space) => (
+          <Link href={`/space/${space.id}`} key={space.id}>
             <SpaceCard />
           </Link>
         )}

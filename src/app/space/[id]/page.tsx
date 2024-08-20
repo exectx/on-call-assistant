@@ -7,7 +7,7 @@ export default async function SpacePage(props: {
     id: string;
   };
 }) {
-  const data = await api.conversations.getOne({ id: props.params.id });
+  const data = await api.space.getOne({ id: props.params.id });
   if (!data) {
     console.log("no data", props.params.id);
     redirect("/404");

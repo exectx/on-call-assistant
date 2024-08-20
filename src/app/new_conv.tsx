@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { newConversation } from "./actions";
+import { newSpace } from "./actions";
 
 export function CreateNewConversationButton() {
   const newSpace_mut = useMutation({
-    mutationFn: async () => newConversation(),
+    mutationFn: async () => newSpace(),
   });
   return (
     <form

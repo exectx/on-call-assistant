@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { index, int, sqliteTableCreator, text } from "drizzle-orm/sqlite-core";
 
 /**
@@ -28,14 +28,12 @@ export const posts = createTable(
   }),
 );
 
-export const conversations = createTable(
-  "conversation",
+export const spaces = createTable(
+  "space",
   {
     id: text("id", { length: 256 }).primaryKey(),
     userId: text("user_id", { length: 256 }).notNull(),
-    title: text("title", { length: 256 })
-      .default("Untitled conversation")
-      .notNull(),
+    title: text("title", { length: 256 }).default("Untitled space").notNull(),
     summary: text("summary", { length: 256 }).default("No summary").notNull(),
     createdAt: int("created_at", { mode: "timestamp" })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -44,8 +42,32 @@ export const conversations = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (convo) => ({
-    userIdIndex: index("user_id_idx").on(convo.userId),
-    updatedAtIndex: index("updated_at_idx").on(convo.updatedAt),
+  (space) => ({
+    userIdIndex: index("user_id_idx").on(space.userId),
+    updatedAtIndex: index("updated_at_idx").on(space.updatedAt),
   }),
 );
+
+export const calls = createTable("call", {
+  id: int("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  spaceId: text("space_id", { length: 256 }).notNull(),
+  userId: text("user_id", { length: 256 }).notNull(),
+  createdAt: int("created_at", { mode: "timestamp" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const spaceRelations = relations(spaces, ({ many }) => {
+  return {
+    calls: many(calls),
+  };
+});
+
+export const callsRelations = relations(calls, ({ one }) => {
+  return {
+    space: one(spaces, {
+      fields: [calls.spaceId],
+      references: [spaces.id],
+    }),
+  };
+});

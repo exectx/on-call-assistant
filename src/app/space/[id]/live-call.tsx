@@ -520,9 +520,9 @@ function VadDebug() {
 
 export function LiveCallPage(props: {
   id: string;
-  data: Exclude<RouterOutputs["conversations"]["getOne"], null>;
+  data: Exclude<RouterOutputs["space"]["getOne"], null>;
 }) {
-  const { data: conv = props.data } = api.conversations.getOne.useQuery(
+  const { data: conv = props.data } = api.space.getOne.useQuery(
     { id: props.id },
     { initialData: props.data },
   );

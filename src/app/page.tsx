@@ -3,7 +3,7 @@ import { Spaces } from "./spaces";
 import { CreateNewConversationButton } from "./new_conv";
 
 export default async function Home() {
-  await api.conversations.getAll.prefetch();
+  await api.space.getAll.prefetch();
 
   return (
     <HydrateClient>
