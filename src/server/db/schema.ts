@@ -36,10 +36,11 @@ export const spaces = createTable(
     title: text("title", { length: 256 }).default("Untitled space").notNull(),
     summary: text("summary", { length: 256 }).default("No summary").notNull(),
     createdAt: int("created_at", { mode: "timestamp" })
-      .default(sql`CURRENT_TIMESTAMP`)
+      .default(sql`(unixepoch())`)
       .notNull(),
     updatedAt: int("updated_at", { mode: "timestamp" })
-      .default(sql`CURRENT_TIMESTAMP`)
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (space) => ({
@@ -53,7 +54,7 @@ export const calls = createTable("call", {
   spaceId: text("space_id", { length: 256 }).notNull(),
   userId: text("user_id", { length: 256 }).notNull(),
   createdAt: int("created_at", { mode: "timestamp" })
-    .default(sql`CURRENT_TIMESTAMP`)
+    .default(sql`(unixepoch())`)
     .notNull(),
 });
 

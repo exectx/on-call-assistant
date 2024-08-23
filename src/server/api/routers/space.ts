@@ -20,6 +20,12 @@ export const spaceRouter = createTRPCRouter({
       const space = await ctx.db.query.spaces.findFirst({
         where: (_space, { eq, and }) =>
           and(eq(_space.userId, ctx.user), eq(_space.id, input.id)),
+        // NOTE: maybe use a different query for this
+        // with: { ->
+        //   calls: {
+        //     limit: 10,
+        //   }
+        // }
       });
       return space ?? null;
     }),

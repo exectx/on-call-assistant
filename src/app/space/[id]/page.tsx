@@ -12,9 +12,5 @@ export default async function SpacePage(props: {
     console.log("no data", props.params.id);
     redirect("/404");
   }
-  return (
-    <HydrateClient>
-      <LiveCallPage id={props.params.id} data={data} />
-    </HydrateClient>
-  );
+  return <LiveCallPage id={props.params.id} data={data} />;
 }

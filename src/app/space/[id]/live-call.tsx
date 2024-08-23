@@ -30,10 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { atom } from "jotai";
-// import { env } from "@/env";
 
-function LiveCallSettings() {
+export function LiveCallSettings() {
   const devices_query = useInputDevicesQuery();
   const [micId, setMicId] = usePrimaryMicStorage();
   const hasPermissionError =
@@ -207,7 +205,7 @@ function LiveCallSettings() {
   );
 }
 
-function MicrophoneToggle() {
+export function MicrophoneToggle() {
   const qc = useQueryClient();
   const devices_query = useInputDevicesQuery();
   const [muted, muteToggle] = useCallStore(
@@ -265,7 +263,7 @@ function MicrophoneToggle() {
   );
 }
 
-function Debug() {
+export function Debug() {
   const secondarySrcState = useCallStore((state) => state.secondaryState);
   const primarySrc = useCallStore((state) => state.primarySrcDeviceId);
   const enabledSrc = useCallStore((state) => state.enabledSecondarySrc);
@@ -284,7 +282,7 @@ function Debug() {
   );
 }
 
-function JoinORLeaveCall() {
+export function JoinORLeaveCall() {
   const state = useCallStore(
     useShallow((state) => ({
       vapi: state.vapi,
@@ -331,9 +329,9 @@ function JoinORLeaveCall() {
   );
 }
 
-function LiveNavTools() {
+export function LiveNavTools() {
   return (
-    <div className="flex min-h-14 w-full items-center justify-between rounded-md border border-input bg-zinc-50 px-4 py-3">
+    <div className="flex w-full items-center justify-between border-b border-input bg-zinc-50 px-5 py-1.5">
       <div className="flex gap-3 text-sm">
         <MicrophoneToggle />
         <LiveCallSettings />
@@ -344,7 +342,7 @@ function LiveNavTools() {
   );
 }
 
-function VapiFetcher() {
+export function VapiFetcher() {
   const init = useCallStore((state) => state.init);
   useEffect(() => {
     // load();
@@ -530,10 +528,6 @@ export function LiveCallPage(props: {
   if (!conv) return console.error("conv not found"), null;
   return (
     <div>
-      <VapiFetcher />
-      <div className="p-6">
-        <LiveNavTools />
-      </div>
       <div className="flex h-full items-center justify-center p-6">
         <VadDebug />
       </div>

@@ -71,9 +71,7 @@ export default function RootLayout({
                 <div className="flex h-12 items-center border-b border-input bg-zinc-50 px-6">
                   Spaces
                 </div>
-                <main className="max-h-screen w-full flex-1 overflow-y-auto">
-                  {children}
-                </main>
+                {children}
               </div>
             </div>
             <Toaster />

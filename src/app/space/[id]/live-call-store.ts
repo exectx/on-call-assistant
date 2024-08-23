@@ -99,6 +99,8 @@ export const useCallStore = create<CallState>((set, get) => {
       const call = (await vapi.start(VAPI_ASSISTANT_ID)) ?? undefined;
       if (call && primarySrcDeviceId) {
         vapi.setInputDevicesAsync({ audioDeviceId: primarySrcDeviceId });
+        const muted = get().mutedPrimary;
+        vapi.setMuted(muted);
       }
       set(() => ({ call }));
     },
@@ -117,10 +119,8 @@ export const useCallStore = create<CallState>((set, get) => {
     mutedPrimary: false,
     toggleMutePrimary: () => {
       const muted = get().mutedPrimary;
-      if (muted) {
-        get().vapi?.setMuted(false);
-      } else {
-        get().vapi?.setMuted(true);
+      if (get().call) {
+        get().vapi?.setMuted(!muted);
       }
       set((state) => ({ mutedPrimary: !state.mutedPrimary }));
     },
@@ -152,10 +152,15 @@ export const useCallStore = create<CallState>((set, get) => {
           })
           .then((stream) => {
             stream.getAudioTracks()[0]!.onended = () => {
-              set(() => ({ secondaryState: "no-stream" }));
+              get()
+                .stream?.getTracks()
+                .forEach((track) => {
+                  track.stop();
+                });
+              set(() => ({ secondaryState: "no-stream", stream: undefined }));
             };
             stream.getVideoTracks()[0]!.onended = () => {
-              set(() => ({ secondaryState: "no-stream" }));
+              set(() => ({ secondaryState: "no-stream", stream: undefined }));
             };
             set(() => ({ secondaryState: "screen-stream", stream }));
           })
@@ -183,7 +188,12 @@ export const useCallStore = create<CallState>((set, get) => {
           .then((stream) => {
             // secondaryStream = stream;
             stream.getAudioTracks()[0]!.onended = () => {
-              set(() => ({ secondaryState: "no-stream" }));
+              get()
+                .stream?.getTracks()
+                .forEach((track) => {
+                  track.stop();
+                });
+              set(() => ({ secondaryState: "no-stream", stream: undefined }));
             };
             set(() => ({
               secondaryState: "mic-stream",
